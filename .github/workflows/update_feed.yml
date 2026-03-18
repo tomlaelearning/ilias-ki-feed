@@ -1,0 +1,40 @@
+name: KI News Feed Update
+
+on:
+  schedule:
+    # Führt das Skript jeden Tag um 05:00 Uhr UTC (06:00 Uhr deutscher Zeit) aus
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Erlaubt es dir, das Skript jederzeit manuell per Klick zu starten
+
+permissions:
+  contents: write # Erlaubt dem Bot, die neue XML-Datei ins Repository zu speichern
+
+jobs:
+  update-feed:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Abhängigkeiten installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install feedparser feedgen pytz
+
+      - name: Skript ausführen
+        run: python ki_news_generator.py
+
+      - name: Neue XML-Datei speichern und pushen
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add ki_news.xml
+          # Prüfen, ob sich die Datei verändert hat. Wenn ja, speichern (commit) und hochladen (push).
+          git diff --quiet && git diff --staged --quiet || git commit -m "Automatisches Update: KI-Newsfeed aktualisiert"
+          git push
